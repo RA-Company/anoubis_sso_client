@@ -1,0 +1,7 @@
+en:
+  anoubis:
+    install:
+      groups:
+        admin: "Administrators"
+        user: "Users"
+        visitor: "Visitor"
