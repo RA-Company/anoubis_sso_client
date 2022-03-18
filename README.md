@@ -21,6 +21,14 @@ Or install it yourself as:
 $ gem install anoubis_sso_client
 ```
 
+## Configuration parameters
+
+This configuration parameters can be placed at files config/application.rb for global configuration or config/environments/<environment>.rb for custom environment configuration.
+
+```ruby
+config.anoubis_sso_server = 'https://sso.example.com/' # Full URL of SSO server (*required)
+```
+
 ## Contributing
 Contribution directions go here.
 

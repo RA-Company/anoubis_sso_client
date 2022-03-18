@@ -4,6 +4,34 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   ##  Returns [Anoubis::Etc::Base] global system parameters
   attr_accessor :etc
 
+  ## Returns main SSO server URL.
+  attr_accessor :sso_server
+
+  ##
+  # Returns main SSO server URL. Link should be defined in Rails.configuration.anoubis.sso_server configuration parameter
+  # @return [String] link to SSO server
+  def sso_server
+    @sso_server ||= get_sso_server
+  end
+
+  private def get_sso_server
+    begin
+      value = Rails.configuration.anoubis_sso_server
+    rescue StandardError
+      value = ''
+      render json: { error: 'Please setup Rails.configuration.anoubis_sso_server configuration variable' }
+    end
+
+    value
+  end
+
+  ##
+  # Returns SSO JWK data url according by OAUTH specification and {sso_server}.
+  # @return [String] SSO JWK data url
+  def sso_jwk_data
+    return "#{sso_server}/openid/.well-known/jwks.json"
+  end
+
   ##
   # Action fires before any other actions
   def after_anoubis_initialization
@@ -143,6 +171,9 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     return nil unless jwt
 
     jwk = jwk_key(jwt[:header]['kid'])
+
+    puts "JWK #{jwk}"
+
     public_key = JWT::JWK::RSA.import(jwk).public_key
 
     begin
@@ -232,6 +263,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # Load JWK keys from server according by OAUTH specification.
   # @return [Object] returns JWK loaded from server
   def load_jwk_data_from_sso_server
+    puts sso_jwk_data
     begin
       response = RestClient.get sso_jwk_data
     rescue StandardError
