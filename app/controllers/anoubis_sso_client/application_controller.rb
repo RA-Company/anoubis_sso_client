@@ -1,3 +1,5 @@
+#TODO Find any usage of sso_server in anoubis_sso_client
+
 ##
 # Main application class inherited from {https://www.rubydoc.info/gems/anoubis/Anoubis/ApplicationController Anoubis::ApplicationController}
 class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
@@ -6,6 +8,9 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
 
   ## Returns main SSO server URL.
   attr_accessor :sso_server
+
+  ## Returns SSO JWK data url
+  attr_accessor :sso_jwk_data_url
 
   ##
   # Returns main SSO server URL. Link should be defined in Rails.configuration.anoubis.sso_server configuration parameter
@@ -26,15 +31,9 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   end
 
   ##
-  # Returns SSO JWK data url according by OAUTH specification and {sso_server}.
-  # @return [String] SSO JWK data url
-  def sso_jwk_data
-    return "#{sso_server}/openid/.well-known/jwks.json"
-  end
-
-  ##
   # Action fires before any other actions
   def after_anoubis_initialization
+    self.sso_jwk_data_url = nil
     if defined? params
       self.etc = Anoubis::Etc::Base.new({ params: params })
     else
@@ -137,6 +136,8 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
 
     jwt = check_sso_token
 
+    puts "JWT #{jwt}"
+
     return session
 
     if session
@@ -166,15 +167,49 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     puts 'check_sso_token'
     jwt = jwt_decode token
 
-    puts jwt
+    puts "JWT #{jwt}"
 
     return nil unless jwt
+
+    puts "ISS #{jwt[:payload]['iss']}"
+
+    begin
+      iss = JSON.parse(redis.get("#{redis_prefix}iss:#{jwt[:payload]['iss']}"),{ symbolize_names: true })
+    rescue StandardError
+      iss = nil
+    end
+
+    unless iss
+      begin
+        response = RestClient.get "#{jwt[:payload]['iss']}.well-known/openid-configuration", { accept: :json }
+      rescue StandardError
+        return nil
+      end
+
+      begin
+        iss = JSON.parse(response.body, { symbolize_names: true })
+      rescue StandardError
+        return nil
+      end
+
+      redis.set("#{redis_prefix}iss:#{jwt[:payload]['iss']}", iss, ex: 86400)
+    end
+
+    puts "ISS #{iss}"
+    return nil unless iss.key? :jwks_uri
+    self.sso_jwk_data_url = iss[:jwks_uri]
 
     jwk = jwk_key(jwt[:header]['kid'])
 
     puts "JWK #{jwk}"
 
-    public_key = JWT::JWK::RSA.import(jwk).public_key
+    return nil unless jwk
+
+    begin
+      public_key = JWT::JWK::RSA.import(jwk).public_key
+    rescue StandardError
+      return nil
+    end
 
     begin
       jwt_v = JWT.decode token, public_key, true, { algorithm: jwk[:alg] }
@@ -225,6 +260,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # @param [String] key - public key identifier
   # @return [Hash] - JWK selected key
   def jwk_key(key)
+    puts "jwk_key #{key}"
     jwk = jwk_data
 
     return nil unless jwk
@@ -240,6 +276,8 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # Load JWK keys from cache or server.
   # @return [Hash] JWK loaded from cache or server
   def jwk_data
+    puts "jwk_data"
+    puts "#{redis_prefix}jwk"
     jwk = redis.get("#{redis_prefix}jwk")
 
     if jwk
@@ -263,6 +301,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # Load JWK keys from server according by OAUTH specification.
   # @return [Object] returns JWK loaded from server
   def load_jwk_data_from_sso_server
+    puts 'load_jwk_data_from_sso_server'
     puts sso_jwk_data
     begin
       response = RestClient.get sso_jwk_data
