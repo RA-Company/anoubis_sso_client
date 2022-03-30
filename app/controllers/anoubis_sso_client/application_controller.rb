@@ -138,6 +138,14 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
 
     puts "JWT #{jwt}"
 
+    return nil unless jwt
+
+    ttl = jwt['exp'] - Time.now.utc.to_i
+
+    puts "Time: #{Time.now.to_i} -> #{ttl}"
+
+    return nil if ttl <= 0
+
     return session
 
     if session
@@ -218,7 +226,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
       return nil
     end
 
-    jwt_v
+    jwt_v[0]
   end
 
   ##
@@ -302,9 +310,9 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # @return [Object] returns JWK loaded from server
   def load_jwk_data_from_sso_server
     puts 'load_jwk_data_from_sso_server'
-    puts sso_jwk_data
+    puts sso_jwk_data_url
     begin
-      response = RestClient.get sso_jwk_data
+      response = RestClient.get sso_jwk_data_url
     rescue StandardError
       return nil
     end
