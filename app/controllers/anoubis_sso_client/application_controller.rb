@@ -9,8 +9,11 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   ## Returns main SSO server URL.
   attr_accessor :sso_server
 
-  ## Returns SSO JWK data url
+  ## Returns SSO JWK data URL
   attr_accessor :sso_jwk_data_url
+
+  ## Returns SSO userinfo URL
+  attr_accessor :sso_userinfo_url
 
   ##
   # Returns main SSO server URL. Link should be defined in Rails.configuration.anoubis.sso_server configuration parameter
@@ -34,6 +37,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   # Action fires before any other actions
   def after_anoubis_initialization
     self.sso_jwk_data_url = nil
+    self.sso_userinfo_url = nil
     if defined? params
       self.etc = Anoubis::Etc::Base.new({ params: params })
     else
@@ -146,7 +150,21 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
 
     return nil if ttl <= 0
 
-    return session
+    session = {
+      user: {},
+      menu: {}
+    }
+
+    user_data = load_user_from_sso_server
+
+    puts "User data: #{user_data}"
+
+    return nil unless user_data
+    return nil if user_data.key? :error
+
+    puts session.inspect
+
+    return nil
 
     if session
       if session[:ttl] < Time.now.utc.to_i
@@ -206,6 +224,7 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     puts "ISS #{iss}"
     return nil unless iss.key? :jwks_uri
     self.sso_jwk_data_url = iss[:jwks_uri]
+    self.sso_userinfo_url = iss[:userinfo_endpoint]
 
     jwk = jwk_key(jwt[:header]['kid'])
 
@@ -326,5 +345,26 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     data[:update] = Time.now
 
     data
+  end
+
+  ##
+  # Loads user data from SSO server and returns it.
+  # @return [Hash] User data
+  def load_user_from_sso_server
+    puts 'load_user_from_sso_server'
+    puts sso_userinfo_url
+    begin
+      response = RestClient.get sso_userinfo_url, { authorization: "Bearer #{token}" }
+    rescue StandardError
+      return nil
+    end
+
+    begin
+      result = JSON.parse(response.body, { symbolize_names: true })
+    rescue StandardError
+      return nil
+    end
+
+    result
   end
 end
