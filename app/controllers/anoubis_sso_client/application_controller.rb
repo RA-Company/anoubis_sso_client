@@ -205,6 +205,8 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
       iss = nil
     end
 
+    puts "ISS1 #{iss}"
+
     unless iss
       begin
         response = RestClient.get "#{jwt[:payload]['iss']}.well-known/openid-configuration", { accept: :json }
@@ -218,10 +220,10 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
         return nil
       end
 
-      redis.set("#{redis_prefix}iss:#{jwt[:payload]['iss']}", iss, ex: 86400)
+      redis.set("#{redis_prefix}iss:#{jwt[:payload]['iss']}", iss.to_json, ex: 86400)
     end
 
-    puts "ISS #{iss}"
+    puts "ISS2 #{iss}"
     return nil unless iss.key? :jwks_uri
     self.sso_jwk_data_url = iss[:jwks_uri]
     self.sso_userinfo_url = iss[:userinfo_endpoint]
