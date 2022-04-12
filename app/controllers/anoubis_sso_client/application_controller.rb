@@ -1,5 +1,3 @@
-#TODO Find any usage of sso_server in anoubis_sso_client
-
 ##
 # Main application class inherited from {https://www.rubydoc.info/gems/anoubis/Anoubis/ApplicationController Anoubis::ApplicationController}
 class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
@@ -15,6 +13,9 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
   ## Returns SSO userinfo URL
   attr_accessor :sso_userinfo_url
 
+  ## Returns used User model
+  attr_accessor :user_model
+
   ##
   # Returns main SSO server URL. Link should be defined in Rails.configuration.anoubis.sso_server configuration parameter
   # @return [String] link to SSO server
@@ -28,6 +29,25 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     rescue StandardError
       value = ''
       render json: { error: 'Please setup Rails.configuration.anoubis_sso_server configuration variable' }
+    end
+
+    value
+  end
+
+  ##
+  # Returns SSO User model.
+  # Can be redefined in Rails.application configuration_anoubis_sso_user_model configuration parameter.
+  # By default returns {AnoubisSsoServer::User} model class
+  # @return [Class] User model class
+  def user_model
+    @user_model ||= get_user_model
+  end
+
+  private def get_user_model
+    begin
+      value = Object.const_get Rails.configuration.anoubis_sso_user_model
+    rescue
+      value = AnoubisSsoClient::User
     end
 
     value
@@ -162,6 +182,12 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     return nil unless user_data
     return nil if user_data.key? :error
 
+    c_user = user_model.where(sso_uuid: user_data[:public]).first
+    c_user = user_model.create(sso_uuid: user_data[:public]) unless c_user
+    c_user.update_user_data(user_data)
+    c_user.save if c_user.changed?
+    session[:user] = c_user.session_data
+
     puts session.inspect
 
     return nil
@@ -196,8 +222,14 @@ class AnoubisSsoClient::ApplicationController < Anoubis::ApplicationController
     puts "JWT #{jwt}"
 
     return nil unless jwt
+    return nil unless jwt.key? :payload
+    return nil unless jwt[:payload].key? 'iss'
 
-    puts "ISS #{jwt[:payload]['iss']}"
+    puts "ISS #{jwt[:payload]['iss']} -> #{sso_server}"
+    puts jwt[:payload]['iss'].index(sso_server)
+
+    return nil if jwt[:payload]['iss'].index(sso_server) == nil
+    return nil if jwt[:payload]['iss'].index(sso_server) != 0
 
     begin
       iss = JSON.parse(redis.get("#{redis_prefix}iss:#{jwt[:payload]['iss']}"),{ symbolize_names: true })

@@ -32,8 +32,8 @@ class AnoubisSsoClient::Group < Anoubis::ApplicationRecord
   # @option options [String] :ident group identifier
   # @option options [String] :translate translate identifier
   def self.create_group(params)
-    return nil if !params.key? :mode
-    return nil if !params.key? :action
+    return nil if !params.key? :ident
+    return nil if !params.key? :translate
 
     group = AnoubisSsoClient::Group.find_or_create_by ident: params[:ident]
 
