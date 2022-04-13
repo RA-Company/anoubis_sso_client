@@ -5,3 +5,9 @@ en:
         admin: "Administrators"
         user: "Users"
         visitor: "Visitor"
+
+  activerecord:
+    errors:
+      anoubis_sso_client/menu:
+        errors:
+          has_child_menus: "Has child menu elements"
