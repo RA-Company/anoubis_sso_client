@@ -5,6 +5,11 @@ ru:
         admin: "Администраторы"
         user: "Пользователи"
         visitor: "Посетитель"
+      menu:
+        dashboard:
+          title: "Дашборд"
+          page_title: "Дашборд"
+          short_title: "Дашборд"
 
   activerecord:
     errors:

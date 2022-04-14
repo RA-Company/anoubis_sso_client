@@ -143,13 +143,39 @@ class AnoubisSsoClient::Menu < ApplicationRecord
   # @param [Hash] options initial model options
   # @option options [String] :mode menu identifier
   # @option options [String] :action menu action type ('data', 'menu' and etc.)
-  def self.create_group(params)
+  def self.create_menu(params)
     return nil if !params.key? :mode
     return nil if !params.key? :action
 
     params[:access] = 'read' unless params.key? :access
     params[:state] = 'visible' unless params.key? :state
 
+    data = AnoubisSsoClient::Menu.where(mode: params[:mode]).first
+    data = AnoubisSsoClient::Menu.create({ mode: params[:mode], action: params[:action] }) unless data
 
+    return unless data
+
+    data.action = params[:action]
+    if params.key? :parent
+      data.menu = params[:parent]
+    else
+      data.menu_id = nil
+    end
+    data.page_size = params.key?(:page_size) ? params[:page_size] : 20
+    data.state = params[:state]
+
+    prefix = "install.menu.#{params[:mode]}"
+
+    I18n.available_locales.each do |locale|
+      I18n.locale = locale
+      data.title = I18n.t("#{prefix}.title")
+      data.page_title = I18n.t("#{prefix}.page_title")
+      data.short_title = I18n.t("#{prefix}.short_title", default: data.title)
+    end
+
+    unless data.save
+      puts data.errors.full_messages
+      return
+    end
   end
 end
