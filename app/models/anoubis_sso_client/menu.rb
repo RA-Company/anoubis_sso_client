@@ -1,6 +1,6 @@
 ##
 # Main menu model
-class AnoubisSsoClient::Menu < ApplicationRecord
+class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
   # Redefines default table name
   self.table_name = 'menus'
 
@@ -57,7 +57,7 @@ class AnoubisSsoClient::Menu < ApplicationRecord
     data = AnoubisSsoClient::Menu.where(menu_id: menu_id).maximum(:position)
     self.position = data ? data + 1 : 0
 
-    self.before_update_menu
+    before_sso_client_update_menu
   end
 
   ##
@@ -65,7 +65,7 @@ class AnoubisSsoClient::Menu < ApplicationRecord
   # doesn't defined then sets it to 20. If defined parent menu element then sets {#tab} based on {#tab} of
   # parent menu element + 1.
   def before_sso_client_update_menu
-    self.menu_id = nil if menu_id = ''
+    self.menu_id = nil if menu_id == ''
     self.mode = mode.downcase
     self.action = action.downcase
     self.page_size = 20 unless page_size

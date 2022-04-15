@@ -1,6 +1,6 @@
 ##
 # User model
-class AnoubisSsoClient::User < ApplicationRecord
+class AnoubisSsoClient::User < AnoubisSsoClient::ApplicationRecord
   self.table_name = 'users'
 
   ## Timezone

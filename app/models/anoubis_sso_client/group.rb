@@ -1,6 +1,6 @@
 ##
 # User group model
-class AnoubisSsoClient::Group < Anoubis::ApplicationRecord
+class AnoubisSsoClient::Group < AnoubisSsoClient::ApplicationRecord
   self.table_name = 'groups'
 
   ## Identifier validation constant
@@ -35,15 +35,15 @@ class AnoubisSsoClient::Group < Anoubis::ApplicationRecord
     return nil if !params.key? :ident
     return nil if !params.key? :translate
 
-    group = AnoubisSsoClient::Group.find_or_create_by ident: params[:ident]
+    group = group_model.find_or_create_by ident: params[:ident]
 
-    if group
-      I18n.available_locales.each do |locale|
-        I18n.locale = locale
-        group.title = I18n.t(params[:translate])
-      end
-      group.save
+    return nil unless group
+
+    I18n.available_locales.each do |locale|
+      I18n.locale = locale
+      group.title = I18n.t(params[:translate])
     end
+    group.save if group.changed?
 
     group
   end

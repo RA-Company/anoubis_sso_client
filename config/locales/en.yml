@@ -5,14 +5,16 @@ en:
         admin: "Administrators"
         user: "Users"
         visitor: "Visitor"
-      menu:
-        dashboard:
-          title: "Dashboard"
-          page_title: "Dashboard"
-          short_title: "Dashboard"
 
   activerecord:
     errors:
       anoubis_sso_client/menu:
         errors:
           has_child_menus: "Has child menu elements"
+
+  install:
+    menu:
+      dashboard:
+        title: "Dashboard"
+        page_title: "Dashboard"
+        short_title: "Dashboard"
