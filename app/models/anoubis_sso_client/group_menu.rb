@@ -31,7 +31,7 @@ class AnoubisSsoClient::GroupMenu < AnoubisSsoClient::ApplicationRecord
   # Procedure checks if group belongs a system that has access to this menu element. If {#access} doesn't
   # defined then {#access} sets to 'read'
   def before_validation_sso_client_group_menu
-    self.access = 'read' if access
+    self.access = 'read' unless access
   end
 
   ##
@@ -61,5 +61,36 @@ class AnoubisSsoClient::GroupMenu < AnoubisSsoClient::ApplicationRecord
         group_menu.destroy
       end
     end
+  end
+
+  ##
+  # Add access to menu element for group
+  # @param [Hash] options initial model options
+  # @option options [String] :group group model
+  # @option options [String] :menu menu model
+  # @option options [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
+  def self.add_menu_access(params = {})
+    return if !params.has_key? :group
+    return if !params.has_key? :menu
+
+    params[:access] = 'read' unless params.key? :access
+
+    if params[:group].class == Array
+      params[:group].each do |group|
+        data = group_menu_model.find_or_create_by group: group, menu: params[:menu]
+        if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
+          data.access = params[:access]
+          data.save
+        end
+      end
+    else
+      data = group_menu_model.find_or_create_by group: params[:group], menu: params[:menu]
+      if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
+        data.access = params[:access]
+        data.save
+      end
+    end
+
+    nil
   end
 end

@@ -143,6 +143,11 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
   # @param [Hash] options initial model options
   # @option options [String] :mode menu identifier
   # @option options [String] :action menu action type ('data', 'menu' and etc.)
+  # @option options [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
+  # @option options [String] :state menu visibility ('visible', 'hidden'). Optional. By default set to 'visible'
+  # @option options [String] :page_size default table size for action 'data'. Optional. By default set 20
+  # @option options [String] :group User's group or array of user's group. Optional.
+  # @return [AnoubisSsoClient::Menu] returns created menu object
   def self.create_menu(params)
     return nil if !params.key? :mode
     return nil if !params.key? :action
@@ -173,9 +178,17 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
       data.short_title = I18n.t("#{prefix}.short_title", default: data.title)
     end
 
-    unless data.save
-      puts data.errors.full_messages
-      return
+    if data.changed?
+      unless data.save
+        puts data.errors.full_messages
+        return nil
+      end
     end
+
+    params[:menu] = data
+
+    group_menu_model.add_menu_access params
+
+    data
   end
 end

@@ -31,6 +31,7 @@ class AnoubisSsoClient::Group < AnoubisSsoClient::ApplicationRecord
   # @param [Hash] options initial model options
   # @option options [String] :ident group identifier
   # @option options [String] :translate translate identifier
+  # @return [AnoubisSsoClient::Group] returns created group object
   def self.create_group(params)
     return nil if !params.key? :ident
     return nil if !params.key? :translate
