@@ -3,6 +3,8 @@
 class AnoubisSsoClient::User < AnoubisSsoClient::ApplicationRecord
   self.table_name = 'users'
 
+  after_create :after_sso_client_create_user
+
   ## Timezone
   attr_accessor :timezone
 
@@ -49,5 +51,21 @@ class AnoubisSsoClient::User < AnoubisSsoClient::ApplicationRecord
       locale: locale,
       timezone: timezone
     }
+  end
+
+  ##
+  # Fires after create new user.
+  def after_sso_client_create_user
+    attach_groups
+  end
+
+  ##
+  # Procedure attaches groups to new created user. By default visitor group is attached to new user
+  def attach_groups
+    gr = AnoubisSsoClient::User.group_model.where(ident: 'visitor').first
+
+    return unless gr
+
+    AnoubisSsoClient::User.group_user_model.find_or_create_by({ user_id: id, group_id: gr.id })
   end
 end
