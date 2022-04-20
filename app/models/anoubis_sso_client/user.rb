@@ -16,6 +16,8 @@ class AnoubisSsoClient::User < AnoubisSsoClient::ApplicationRecord
   validates :sso_uuid, presence: true, uniqueness: { case_sensitive: true }
   validates :uuid, presence: true, length: { maximum: 40 }, uniqueness: { case_sensitive: true }
 
+  has_many :group_users, class_name: 'AnoubisSsoClient::GroupUser'
+
   ##
   # Fires before create any User on the server. Procedure generates internal UUID and setup timezone to GMT.
   # Public user identifier is generated also if not defined.
@@ -62,10 +64,28 @@ class AnoubisSsoClient::User < AnoubisSsoClient::ApplicationRecord
   ##
   # Procedure attaches groups to new created user. By default visitor group is attached to new user
   def attach_groups
-    gr = AnoubisSsoClient::User.group_model.where(ident: 'visitor').first
+    gr = group_model.where(ident: 'visitor').first
 
     return unless gr
 
-    AnoubisSsoClient::User.group_user_model.find_or_create_by({ user_id: id, group_id: gr.id })
+    add_group group: gr
+  end
+
+  ##
+  # Add current user to the group
+  # @param [Hash] params parameters
+  # @option params [Group | Array<Group>] :group <Group> model or array of <Group> models
+  def add_group(params = {})
+    return if !params.has_key? :group
+
+    if params[:group].class == Array
+      params[:group].each do |group|
+        group_user_model.find_or_create_by group: group, user_id: id
+      end
+    else
+      group_user_model.find_or_create_by group: params[:group], user_id: id
+    end
+
+    nil
   end
 end

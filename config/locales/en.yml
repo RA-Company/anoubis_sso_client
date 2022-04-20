@@ -18,3 +18,11 @@ en:
         title: "Dashboard"
         page_title: "Dashboard"
         short_title: "Dashboard"
+      settings:
+        title: "Settings"
+        page_title: "Settings"
+        short_title: "Settings"
+      settings/menu:
+        title: "Menu"
+        page_title: "Menu administration"
+        short_title: "Menu"

@@ -11,12 +11,12 @@ class AnoubisSsoClient::GroupMenu < AnoubisSsoClient::ApplicationRecord
 
   # @!attribute group
   #   @return [Group] reference to the {Group} model
-  belongs_to :group, :class_name => 'AnoubisSsoClient::Group'
+  belongs_to :group, class_name: 'AnoubisSsoClient::Group'
   validates :group, presence: true, uniqueness: { scope: [:menu_id] }
 
   # @!attribute menu
   #   @return [Menu] reference to the {Menu} model
-  belongs_to :menu, :class_name => 'AnoubisSsoClient::Menu'
+  belongs_to :menu, class_name: 'AnoubisSsoClient::Menu'
   validates :menu, presence: true, uniqueness: { scope: [:group_id] }
 
   # @!attribute access
@@ -64,33 +64,44 @@ class AnoubisSsoClient::GroupMenu < AnoubisSsoClient::ApplicationRecord
   end
 
   ##
-  # Add access to menu element for group
-  # @param [Hash] options initial model options
-  # @option options [String] :group group model
-  # @option options [String] :menu menu model
-  # @option options [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
-  def self.add_menu_access(params = {})
-    return if !params.has_key? :group
-    return if !params.has_key? :menu
+  # Return localized title of menu element
+  # @return [String] localized title
+  def title
+    get_localized_menu 'title'
+  end
 
-    params[:access] = 'read' unless params.key? :access
+  ##
+  # Return localized page_title of menu element
+  # @return [String] localized page_title
+  def page_title
+    get_localized_menu 'page_title'
+  end
 
-    if params[:group].class == Array
-      params[:group].each do |group|
-        data = group_menu_model.find_or_create_by group: group, menu: params[:menu]
-        if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
-          data.access = params[:access]
-          data.save
-        end
-      end
-    else
-      data = group_menu_model.find_or_create_by group: params[:group], menu: params[:menu]
-      if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
-        data.access = params[:access]
-        data.save
-      end
+  ##
+  # Return localized short_title of menu element
+  # @return [String] localized short_title
+  def short_title
+    get_localized_menu 'short_title'
+  end
+
+  ##
+  # Return localized field
+  # @param [String] field Field name
+  # @return [String] localized field
+  def get_localized_menu(field)
+    loc_field = (field.to_s + '_locale').to_sym
+    begin
+      self[loc_field] = JSON.parse(self[loc_field]) if self[loc_field]
+    rescue
+
     end
 
-    nil
+    begin
+      result = get_locale_field loc_field.to_s
+    rescue
+      result = eval('self.menu.' + field.to_s)
+    end
+
+    result
   end
 end

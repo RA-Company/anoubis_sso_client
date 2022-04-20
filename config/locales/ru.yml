@@ -18,3 +18,11 @@ ru:
         title: "Дашборд"
         page_title: "Дашборд"
         short_title: "Дашборд"
+      settings:
+        title: "Настройки"
+        page_title: "Настройки"
+        short_title: "Настройки"
+      settings/menu:
+        title: "Меню"
+        page_title: "Администрирования меню"
+        short_title: "Меню"

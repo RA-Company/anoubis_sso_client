@@ -27,10 +27,11 @@ This configuration parameters can be placed at files config/application.rb for g
 
 ```ruby
 config.anoubis_sso_server = 'https://sso.example.com/' # Full URL of SSO server (*required)
-config.anoubis_sso_user_model = 'AnoubisSsoClient::User'# Used User model. ()By default used AnoubisSsoServer::User model) (*optional)
-config.anoubis_sso_menu_model = 'AnoubisSsoClient::Menu'# Used Menu model. ()By default used AnoubisSsoServer::Menu model) (*optional)
-config.anoubis_sso_group_model = 'AnoubisSsoClient::Group'# Used Group model. ()By default used AnoubisSsoServer::Group model) (*optional)
-config.anoubis_sso_group_menu_model = 'AnoubisSsoClient::GroupModel'# Used GroupMenu model. ()By default used AnoubisSsoServer::GroupMenu model) (*optional)
+config.anoubis_sso_user_model = 'AnoubisSsoClient::User'# Used User model. (By default used AnoubisSsoServer::User model) (*optional)
+config.anoubis_sso_menu_model = 'AnoubisSsoClient::Menu'# Used Menu model. (By default used AnoubisSsoServer::Menu model) (*optional)
+config.anoubis_sso_group_model = 'AnoubisSsoClient::Group'# Used Group model. (By default used AnoubisSsoServer::Group model) (*optional)
+config.anoubis_sso_group_menu_model = 'AnoubisSsoClient::GroupMenu'# Used GroupMenu model. (By default used AnoubisSsoServer::GroupMenu model) (*optional)
+config.anoubis_sso_group_user_model = 'AnoubisSsoClient::GroupUser'# Used GroupMenu model. (By default used AnoubisSsoServer::GroupUser model) (*optional)
 ```
 
 ## Contributing

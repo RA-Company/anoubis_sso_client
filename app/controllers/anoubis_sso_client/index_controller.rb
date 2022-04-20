@@ -8,22 +8,23 @@ class AnoubisSsoClient::IndexController < AnoubisSsoClient::ApplicationControlle
     result = {
       result: 0,
       message: I18n.t('anoubis.success'),
-      menu: [
-        {
-          mode: 'dashboard',
-          title: I18n.t('anoubis.install.menu.dashboard.title'),
-          page_title: I18n.t('anoubis.install.menu.dashboard.page_title'),
-          short_title: I18n.t('anoubis.install.menu.dashboard.short_title'),
-          position: 0,
-          tab: 0,
-          action: 'data',
-          access: 'write',
-          state: 'show',
-          parent: nil
-        }
-      ]
+      menu: []
     }
 
+    if current_menu
+      current_menu.each_value do |dat|
+        result[:menu].push dat
+      end
+    end
+
+    before_menu_output result
+
     render json: result
+  end
+
+  ##
+  # Callback for change menu output
+  def before_menu_output(result)
+
   end
 end

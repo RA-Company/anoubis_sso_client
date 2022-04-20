@@ -47,12 +47,12 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
 
   # @!attribute menu
   #   @return [Menu, nil] the parent menu for element menu (if exists).
-  belongs_to :menu, class_name: 'AnoubisSsoClientt::Menu', optional: true
+  belongs_to :menu, class_name: 'AnoubisSsoClient::Menu', optional: true
   has_many :menus, class_name: 'AnoubisSsoClient::Menu'
+  has_many :group_menus, class_name: 'AnoubisSsoClient::GroupMenu'
 
   ##
   # Is called before menu will be created in database. Sets {#position} as last {#position} + 1 on current {#tab}.
-  # After this calls {#before_update_menu} for additional modification.
   def before_sso_client_create_menu
     data = AnoubisSsoClient::Menu.where(menu_id: menu_id).maximum(:position)
     self.position = data ? data + 1 : 0
@@ -76,8 +76,7 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
   end
 
   ##
-  # Is called before menu will be deleted from database. Checks the ability to destroy a menu. Delete
-  # all translations for menu model from {MenuLocale}.
+  # Is called before menu will be deleted from database. Procedure clears most child components.
   def before_sso_client_destroy_menu
     unless menus.empty?
       errors.add(:base, I18n.t('activerecord.errors.anoubis_sso_client/menu.errors.has_child_menus'))
@@ -140,13 +139,13 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
 
   ##
   # Create multi language menu
-  # @param [Hash] options initial model options
-  # @option options [String] :mode menu identifier
-  # @option options [String] :action menu action type ('data', 'menu' and etc.)
-  # @option options [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
-  # @option options [String] :state menu visibility ('visible', 'hidden'). Optional. By default set to 'visible'
-  # @option options [String] :page_size default table size for action 'data'. Optional. By default set 20
-  # @option options [String] :group User's group or array of user's group. Optional.
+  # @param [Hash] params initial model options
+  # @option params [String] :mode menu identifier
+  # @option params [String] :action menu action type ('data', 'menu' and etc.)
+  # @option params [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
+  # @option params [String] :state menu visibility ('visible', 'hidden'). Optional. By default set to 'visible'
+  # @option params [String] :page_size default table size for action 'data'. Optional. By default set 20
+  # @option params [String] :group User's group or array of user's group. Optional.
   # @return [AnoubisSsoClient::Menu] returns created menu object
   def self.create_menu(params)
     return nil if !params.key? :mode
@@ -185,10 +184,37 @@ class AnoubisSsoClient::Menu < AnoubisSsoClient::ApplicationRecord
       end
     end
 
-    params[:menu] = data
-
-    group_menu_model.add_menu_access params
+    data.add_group params
 
     data
+  end
+
+  ##
+  # Add access to group for menu element
+  # @param [Hash] params parameters
+  # @option params [Group | Array<Group>] :group <Group> model or array of <Group> models
+  # @option params [String] :access access mode ('read', 'write', 'disable'). Optional. By default set to 'read'
+  def add_group(params = {})
+    return if !params.has_key? :group
+
+    params[:access] = 'read' unless params.key? :access
+
+    if params[:group].class == Array
+      params[:group].each do |group|
+        data = group_menu_model.find_or_create_by group: group, menu_id: id
+        if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
+          data.access = params[:access]
+          data.save
+        end
+      end
+    else
+      data = group_menu_model.find_or_create_by group: params[:group], menu_id: id
+      if group_menu_model.accesses[params[:access].to_sym] > group_menu_model.accesses[data.access.to_sym]
+        data.access = params[:access]
+        data.save
+      end
+    end
+
+    nil
   end
 end
