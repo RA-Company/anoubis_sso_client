@@ -137,6 +137,7 @@ module AnoubisSsoClient::ApplicationCommon
         if check_menu_access?
           allow = false
           if current_menu.key? params[:controller].to_sym
+            etc.menu = Anoubis::Etc::Menu.new current_menu[params[:controller].to_sym]
             allow = true unless current_menu[params[:controller].to_sym][:access] == 'disable'
           end
           unless allow
