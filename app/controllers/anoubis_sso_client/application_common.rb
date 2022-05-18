@@ -294,7 +294,7 @@ module AnoubisSsoClient::ApplicationCommon
                GROUP BY `t2`.`id`, `t2`.`mode`, `t2`.`action`, `t2`.`title_locale`, `t2`.`page_title_locale`, `t2`.`short_title_locale`,
                   `t2`.`position`, `t2`.`tab`, `t2`.`menu_id`, `t2`.`state`, `t2`.`user_id`, `t2`.`parent_mode`
             ) AS `t`
-          ORDER BY `t`.`menu_id`, `t`.`position`
+          ORDER BY `t`.`tab`, `t`.`position`
     SQL
 
     result = {}
