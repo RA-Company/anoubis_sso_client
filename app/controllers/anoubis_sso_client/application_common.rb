@@ -148,7 +148,7 @@ module AnoubisSsoClient::ApplicationCommon
       end
     end
 
-    Time.zone = current_user[:timezone]
+    Time.zone = current_user[:timezone] if current_user
 
     after_sso_client_initialization
   end
